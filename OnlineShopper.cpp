@@ -1,6 +1,7 @@
 #include <iostream>
 #include <iomanip>
 #include <algorithm>
+#include <conio.h>
 
 using namespace std;
 
@@ -88,37 +89,10 @@ class productClass: public productList{
 };
 
 
-class order{
+class orderClass: public productClass{
 	private:
-		float paymentValue;
-		bool paymentSuccess = false;
 	public:
-		void setPaymentValue(){
-			cout<<"	Enter amount to pay: ";
-			cin>>paymentValue;
-		}
-		
-		void paymentChecker(float total){
-			if(paymentValue>=total)
-				paymentSuccess = true;
-		}
-		void cancelOrder(){
-		}
-};
-
-
-class shoppingCart: public productClass{
-	private:
-		float total, grandTotal;
-	public:	
-		float totalCost(int location, int count){
-				total = productArray[location].unitPrice*count;
-				grandTotal+=total;
-			}
-			
-		void displayShoppingCart(int location, int productCount, int i){
-			cout<<"\nOrder ID: "<<i+1<<"\n";
-			cout<<"Total Amount: "<<total;			
+		void displayOrder(int location, int productCount){		
 			cout<<left<<setw(28)<<"\nProduct"
 			<<setw(10)<<" ID"
 			<<setw(20)<<"Price per unit"
@@ -127,6 +101,35 @@ class shoppingCart: public productClass{
 				<<setw(10)<<productArray[location].productID
 				<<setw(20)<<productArray[location].unitPrice
 				<<setw(20)<<productCount<<endl;
+		}
+};
+
+
+class shoppingCart: public productClass{
+	private:
+		float total, grandTotal;
+	public:	
+		void totalCost(int location, int count){
+				total = productArray[location].unitPrice*count;
+				grandTotal+=total;
+			}
+			
+		void displayShoppingCart(int location, int productCount){
+			cout<<"\nTotal Amount: "<<total;			
+			cout<<left<<setw(28)<<"\nProduct"
+			<<setw(10)<<" ID"
+			<<setw(20)<<"Price per unit"
+			<<setw(20)<<"Amount left"<<endl;
+			cout<<left<<setw(28)<<productArray[location].productName
+				<<setw(10)<<productArray[location].productID
+				<<setw(20)<<productArray[location].unitPrice
+				<<setw(20)<<productCount<<endl;
+		}
+		float getGrandTotal(){
+			return grandTotal;
+		}
+		void setGrandTotal(int num){
+			grandTotal=num;	
 		}
 };
 
@@ -149,79 +152,132 @@ bool limitValidation(int qtyBuy, int qtyLeft){
 int main(){
 	productClass product;
 	shoppingCart cart;
-	string itemChoice, orderChoice;
-	int initializedCount = product.countInitializedProducts(), arrayLocation, productBoughtCount, orderCounter=0;
-	bool validStringType, retry;
-	int orderID[20][2];
+	orderClass order;
+	string itemChoice, orderChoice, checkoutChoice;
+	int initializedCount = product.countInitializedProducts(), arrayLocation, productBoughtCount, orderCounter=0, menuChoice, productCounter=0;
+	bool validStringType, retry, menuLoop=true;
+	int orderID[20][20][2]; 
+	float pricePerShoppingCart[20][2];
 	
 	do {
-		product.displayCatalogue();
-		cout<<"\n";
-		retry=false;
-	do {
-		validStringType=false;
-		cout << "	Input the item ID to buy: ";
-		getline(cin, itemChoice);
-		transform(itemChoice.begin(), itemChoice.end(), itemChoice.begin(), ::toupper);
-		for(int i=0; i<initializedCount; i++){
-			if (itemChoice == product.productArray[i].productID){
-			validStringType = true;
-			arrayLocation = i;
+		cout<<" \n	1. View and Buy Products \n	2. View Shopping Cart \n	3. View Orders \n	4. Exit\n	Please Choose from the 4 choices above[1-4]:";
+		integerValidation(menuChoice);
+		cin.ignore();
+		switch(menuChoice){
+			case 1:
+				do {
+					product.displayCatalogue();
+					cout<<"\n";
+					retry=false;
+					do {
+						validStringType=false;
+						cout << "	Input the item ID to buy: ";
+						getline(cin, itemChoice);
+						transform(itemChoice.begin(), itemChoice.end(), itemChoice.begin(), ::toupper);
+						for(int i=0; i<initializedCount; i++){
+							if (itemChoice == product.productArray[i].productID){
+							validStringType = true;
+							arrayLocation = i;
+							break;
+							}
+						}
+					} while (!validStringType);
+					cout<<"	"<<left<<setw(28)<<"Product"
+							<<setw(10)<<" ID"
+							<<setw(20)<<"Price per unit"
+							<<setw(20)<<"Amount left"<<endl;
+					cout<<"	"<<left<<setw(28)<<product.productArray[arrayLocation].productName
+							<<setw(10)<<product.productArray[arrayLocation].productID
+							<<setw(20)<<product.productArray[arrayLocation].unitPrice
+							<<setw(20)<<product.productArray[arrayLocation].productQuantity<<endl;
+							
+					cout<<"	Input the amount of the product you want to buy: ";
+					integerValidation(productBoughtCount);
+					limitValidation(productBoughtCount, product.productArray[arrayLocation].productQuantity);
+					cin.ignore();
+						
+					do {
+						validStringType=false;
+						cout<<"	Try Again?(if there was an error in your choice)[Y/N]: ";
+						getline(cin, orderChoice);
+						transform(orderChoice.begin(), orderChoice.end(), orderChoice.begin(), ::toupper);
+						if (orderChoice == "Y" || orderChoice == "N"){
+							retry = true;
+							validStringType = true;
+						}
+						} while (!validStringType);
+					do {
+						if (orderChoice == "Y")
+						break;
+						validStringType=false;
+						cout<<"	Buy More?[Y/N](No to proceed to menu): ";
+						getline(cin, orderChoice);
+						transform(orderChoice.begin(), orderChoice.end(), orderChoice.begin(), ::toupper);
+						if (orderChoice == "Y"){
+							retry = true;
+							validStringType = true;
+							orderID[orderCounter][productCounter][0]=arrayLocation;
+							orderID[orderCounter][productCounter][1]=productBoughtCount;
+							product.setProductQuantity(arrayLocation,productBoughtCount);
+							productCounter+=1;
+						}
+						else if (orderChoice== "N"){
+							retry = false;
+							validStringType = true;
+							orderID[orderCounter][productCounter][0]=arrayLocation;
+							orderID[orderCounter][productCounter][1]=productBoughtCount;
+							product.setProductQuantity(arrayLocation,productBoughtCount);
+							productCounter+=1;
+						}
+					} while (!validStringType);
+					system("cls");
+				}while(retry==true);
 			break;
-			}
+			case 2:
+				cout<<"\nOrder ID: "<<orderCounter+1<<"\n";
+				for(int i=0; i<productCounter; i++){
+				cart.totalCost(orderID[orderCounter][i][0],orderID[orderCounter][i][1]);
+				cart.displayShoppingCart(orderID[orderCounter][i][0], orderID[orderCounter][i][1]);
+				}
+				cout<<"\n-------------------------------------------------\n\nGrand Total for everything in the shopping cart: "<<cart.getGrandTotal();
+				do{
+					validStringType=false;
+					cout<<"\n\n	Would you like to checkout?[Y/N]: ";
+					getline(cin, checkoutChoice);
+					transform(checkoutChoice.begin(), checkoutChoice.end(), checkoutChoice.begin(), ::toupper);
+					if(checkoutChoice=="Y"){
+						cout<<"\n	Success!";
+						validStringType=true;
+						pricePerShoppingCart[orderCounter][0]=productCounter;
+						pricePerShoppingCart[orderCounter][1]=cart.getGrandTotal();
+						productCounter=0;
+						cart.setGrandTotal(0);
+						orderCounter+=1;
+						cout<<"\n\n	Press Enter to Continue";	
+						getch();
+					}
+				}while(!validStringType);
+					system("cls");
+			break;
+			case 3:
+				for(int j=0; j<orderCounter; j++){
+					cout<<"\n-------------------------------------------------\nOrder ID: "<<j+1;
+					cout<<"\nGrand Total: "<<pricePerShoppingCart[j][1];
+					for(int k=0; k<pricePerShoppingCart[j][0]; k++){
+						order.displayOrder(orderID[j][k][0], orderID[j][k][1]);
+					}
+				}
+				cout<<"\n\n	Press Enter to Continue";	
+				getch();
+				system("cls");
+			break;
+			case 4:
+				menuLoop=false;
+			break;
+			default:
+				menuLoop=true;
 		}
-	} while (!validStringType);
-	cout<<"	"<<left<<setw(28)<<"Product"
-			<<setw(10)<<" ID"
-			<<setw(20)<<"Price per unit"
-			<<setw(20)<<"Amount left"<<endl;
-	cout<<"	"<<left<<setw(28)<<product.productArray[arrayLocation].productName
-			<<setw(10)<<product.productArray[arrayLocation].productID
-			<<setw(20)<<product.productArray[arrayLocation].unitPrice
-			<<setw(20)<<product.productArray[arrayLocation].productQuantity<<endl;
-	cout<<"	Input the amount of the product you want to buy: ";
-	integerValidation(productBoughtCount);
-	limitValidation(productBoughtCount, product.productArray[arrayLocation].productQuantity);
-	cin.ignore();
 		
-		do {
-		validStringType=false;
-		cout<<"	Try Again?(if there was an error in your choice)[Y/N]: ";
-		getline(cin, orderChoice);
-		transform(orderChoice.begin(), orderChoice.end(), orderChoice.begin(), ::toupper);
-		if (orderChoice == "Y" || orderChoice == "N"){
-			retry = true;
-			validStringType = true;
-		}
-		} while (!validStringType);
-		do {
-		if (orderChoice == "Y")
-		break;
-		validStringType=false;
-		cout<<"	Buy More?[Y/N](No to proceed to checkout): ";
-		getline(cin, orderChoice);
-		transform(orderChoice.begin(), orderChoice.end(), orderChoice.begin(), ::toupper);
-		if (orderChoice == "Y"){
-			retry = true;
-			validStringType = true;
-			orderID[orderCounter][0]=arrayLocation;
-			orderID[orderCounter][1]=productBoughtCount;
-			product.setProductQuantity(arrayLocation,productBoughtCount);
-			orderCounter+=1;
-		}
-		else if (orderChoice== "N"){
-			retry = false;
-			validStringType = true;
-			orderID[orderCounter][0]=arrayLocation;
-			orderID[orderCounter][1]=productBoughtCount;
-			product.setProductQuantity(arrayLocation,productBoughtCount);
-			orderCounter+=1;
-		}
-		} while (!validStringType);
-		system("cls");
-	}while(retry==true);
-	for(int i=0; i<orderCounter; i++){
-	cart.totalCost(orderID[i][0],orderID[i][1]);
-	cart.displayShoppingCart(orderID[i][0], orderID[i][1],i);
-	}
+	}while(menuLoop==true);
+	return 0;
 }
