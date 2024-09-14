@@ -135,18 +135,10 @@ class shoppingCart: public productClass{
 
 void integerValidation(int &number){
 			while (!(cin >> number)) {
-		        cout <<"	Invalid input. Please try again: ";
+		        cout <<"	Must be a number. Please try again: ";
 		        cin.clear(); 
 		        cin.ignore(numeric_limits<streamsize>::max(), '\n');
     		}
-		}
-
-bool limitValidation(int qtyBuy, int qtyLeft){
-			if(qtyLeft<qtyBuy){
-				cout<<"	We're out of stock of that item, please try again.\n";
-				return true;
-			}
-			return false;	
 		}
 
 int main(){
@@ -155,21 +147,47 @@ int main(){
 	orderClass order;
 	string itemChoice, orderChoice, checkoutChoice;
 	int initializedCount = product.countInitializedProducts(), arrayLocation, productBoughtCount, orderCounter=0, menuChoice, productCounter=0;
-	bool validStringType, retry, menuLoop=true;
+	bool validStringType, retry, menuLoop=true, validation, soldOut=false;
 	int orderID[20][20][2]; 
 	float pricePerShoppingCart[20][2];
 	
 	do {
-		cout<<" \n	1. View and Buy Products \n	2. View Shopping Cart \n	3. View Orders \n	4. Exit\n	Please Choose from the 4 choices above[1-4]:";
+		do{
+		validation=true;
+		cout<<" \n	1. View and Buy Products \n	2. View Shopping Cart \n	3. View Orders \n	4. Exit\n	Please Choose from the 4 choices above[1-4]: ";
 		integerValidation(menuChoice);
 		cin.ignore();
+		if(menuChoice==2&&productCounter==0){
+			cout<<"\n	Must have added a product first.\n";
+			validation=false;
+		}
+		if(menuChoice==3&&orderCounter==0){
+			cout<<"\n	Must have made an order first.\n";
+			validation=false;
+		}
+		}while(validation==false);
 		switch(menuChoice){
 			case 1:
 				do {
+					if(	product.productArray[0].productQuantity==0&&
+							product.productArray[1].productQuantity==0&&
+							product.productArray[2].productQuantity==0&&
+							product.productArray[3].productQuantity==0&&
+							product.productArray[4].productQuantity==0){
+							soldOut=true;	
+							cout<<"\n	Sold Out.";
+							cout<<"\n	Sold Out.";
+							cout<<"\n	Sold Out.";
+							cout<<"\n\n	Press Enter to Continue";	
+							getch();
+							break;
+					}
 					product.displayCatalogue();
 					cout<<"\n";
 					retry=false;
 					do {
+						
+						validation=true;
 						validStringType=false;
 						cout << "	Input the item ID to buy: ";
 						getline(cin, itemChoice);
@@ -181,7 +199,15 @@ int main(){
 							break;
 							}
 						}
-					} while (!validStringType);
+						if(product.productArray[arrayLocation].productQuantity==0){
+							cout<<"\n	There are no more of that product left, try again.\n";
+							validation=false;
+						}
+					} while (!validStringType||validation==false);
+					if (soldOut==true){
+					system("cls");
+					break;
+					}
 					cout<<"	"<<left<<setw(28)<<"Product"
 							<<setw(10)<<" ID"
 							<<setw(20)<<"Price per unit"
@@ -190,15 +216,23 @@ int main(){
 							<<setw(10)<<product.productArray[arrayLocation].productID
 							<<setw(20)<<product.productArray[arrayLocation].unitPrice
 							<<setw(20)<<product.productArray[arrayLocation].productQuantity<<endl;
-							
-					cout<<"	Input the amount of the product you want to buy: ";
-					integerValidation(productBoughtCount);
-					limitValidation(productBoughtCount, product.productArray[arrayLocation].productQuantity);
-					cin.ignore();
-						
+					do{
+						cout<<"	Input the amount of the product you want to buy: ";
+						validation=true;
+						integerValidation(productBoughtCount);
+						cin.ignore();
+						if(productBoughtCount> product.productArray[arrayLocation].productQuantity){
+							cout<<"	We're out of stock of that item, please try again. \n";
+							validation=false;
+						}
+						if(productBoughtCount<=0){
+							cout<<"	Product bought must be greater than 0. \n";
+							validation=false;
+						}
+					}while(validation==false);
 					do {
 						validStringType=false;
-						cout<<"	Try Again?(if there was an error in your choice)[Y/N]: ";
+						cout<<"	Do you wish to try again?(if there was an error in your choice)[Y/N]: ";
 						getline(cin, orderChoice);
 						transform(orderChoice.begin(), orderChoice.end(), orderChoice.begin(), ::toupper);
 						if (orderChoice == "Y" || orderChoice == "N"){
@@ -230,7 +264,7 @@ int main(){
 							productCounter+=1;
 						}
 					} while (!validStringType);
-					system("cls");
+				system("cls");
 				}while(retry==true);
 			break;
 			case 2:
@@ -255,6 +289,9 @@ int main(){
 						orderCounter+=1;
 						cout<<"\n\n	Press Enter to Continue";	
 						getch();
+					}
+					if(checkoutChoice=="N"){
+						validStringType=true;
 					}
 				}while(!validStringType);
 					system("cls");
